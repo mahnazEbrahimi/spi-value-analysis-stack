@@ -1,0 +1,30 @@
+_defaults:
+  spiValueAnalysisAdminRoleServiceAccountName: spiValueAnalysis-admin
+  spiValueAnalysisReadRoleServiceAccountName: spiValueAnalysis-read
+  spiValueAnalysisAppRoleServiceAccountName: spiValueAnalysis-app
+  serviceAccountNamespace: spi
+  autoMinorVersionUpgrade: true
+  allowMajorVersionUpgrade: false
+  rdsInstanceType: m6g.large
+  rdsStorageType: gp3
+  engineVersion: '"15"'
+dev_cloud_os_eu:
+  allowedCidrRange1: 10.3.16.0/20
+  allowedCidrRange2: 10.3.32.0/20
+  allowedCidrRange3: 10.3.48.0/20
+  eksIdentityProviderId: B9F82677D4A86153847DB291568D6256
+dev_cloud_os_uk:
+  allowedCidrRange1: 10.4.16.0/20
+  allowedCidrRange2: 10.4.32.0/20
+  allowedCidrRange3: 10.4.48.0/20
+  eksIdentityProviderId: 0B8054823475E27F4CCA74FF6D1B5761
+dev_group_platform_eu:
+  allowedCidrRange1: 10.100.16.0/20
+  allowedCidrRange2: 10.100.32.0/20
+  allowedCidrRange3: 10.100.48.0/20
+  eksIdentityProviderId: 1AF5F6011C89C62857291B3E750C4F55
+staging_cloud_os_eu:
+  eksIdentityProviderId: 167A3FA50E47165E02C83265BF45F91B
+  allowedCidrRange1: 10.1.16.0/20
+  allowedCidrRange2: 10.1.32.0/20
+  allowedCidrRange3: 10.1.48.0/20

@@ -1,0 +1,38 @@
+type: rds
+defaults:
+    deletionProtection: true
+    allocatedStorage: 100
+    maxAllocatedStorage: 200
+    retentionPeriod: 7
+    instanceType: m6g.large
+    storageType: ${rdsStorageType}
+    engineVersion: ${engineVersion}
+    autoMinorVersionUpgrade: ${autoMinorVersionUpgrade}
+    allowMajorVersionUpgrade: ${allowMajorVersionUpgrade}
+    iamAuthentication: true
+    cloudwatchLogsExports:
+    - postgresql
+    - upgrade
+    allowedCidrRanges:
+    - ${allowedCidrRange1}
+    - ${allowedCidrRange2}
+    - ${allowedCidrRange3}
+    enablePerformanceInsights: true
+    deleteAutomatedBackups: true
+    backupEnabled: true
+    ssmParameterNamePrefix: /Suite/Database
+resources:
+    valueAnalysis:
+        instanceIdentifier: spi-value-analysis
+        databaseName: signavio
+        instanceType: ${rdsInstanceType}
+        init:
+            path: config/sql/spi-init.sql
+            parameters:
+                admin_user: signavio_admin
+                app_user: signavio_app
+                read_user: signavio_read
+                rls_read_user: signavio_rls_read
+                db_name: signavio
+                schema_name: pex
+            generateSigningKey: true

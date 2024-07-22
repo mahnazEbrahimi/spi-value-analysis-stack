@@ -1,0 +1,214 @@
+version: 2.1
+orbs:
+  cdk: signavio/cdk-orb@1.9.0
+
+env-dev-spi-eu: &dev_cloud_os_eu # Dev Account for SPI
+  account_id: "857753963368"
+  tag_id: pi-dev-eu
+  args: >
+    -c environment=dev_cloud_os_eu
+    -c account=857753963368
+    -c region=eu-central-1
+
+env-dev-spi-uk: &dev_cloud_os_uk # Dev Account for Otto Kraken
+  account_id: "857753963368"
+  tag_id: pi-dev-uk
+  args: >
+    -c environment=dev_cloud_os_uk
+    -c account=857753963368
+    -c region=eu-west-2
+
+env-dev-group-platform-eu: &dev_group_platform_eu # Dev Account for Platform Group
+  account_id: "754311541567"
+  tag_id: dev_group_platform_eu
+  args: >
+    -c environment=dev_group_platform_eu
+    -c account=754311541567
+    -c region=eu-central-1
+
+env-staging-spi-eu: &staging_cloud_os_eu # Staging Account for SPI
+  account_id: "254788917140"
+  tag_id: staging_cloud_os_eu
+  args: >
+    -c environment=staging_cloud_os_eu
+    -c account=254788917140
+    -c region=eu-central-1
+
+cloud-formation-default: &cloud-formation-default
+  role: "CloudformationAccessRole"
+  context:
+    - npm-github
+    - CDK
+
+diff-defaults: &diff-defaults
+  command: diff
+  post_diff: true
+  <<: *cloud-formation-default
+
+deploy-job-defaults: &deploy-job-defaults
+  command: deploy
+  docker_buildkit: 1
+  enable_docker: true
+  <<: *cloud-formation-default
+
+###################### filter master, main branches only ######################
+only-main: &only-main
+  filters:
+    branches:
+      only:
+        - main
+
+guard-defaults: &guard-defaults
+  context:
+    - ECR
+
+workflows:
+  build:
+    jobs:
+      - cdk/test:
+          context: NPM
+      - cdk/sonarqube:
+          context:
+            - NPM
+            - BMW_DEX_SonarQubeSAP
+          requires:
+            - cdk/test
+      ## dev-spi-eu
+      - cdk/deploy:
+          name: diff-dev_cloud_os_eu
+          <<: *diff-defaults
+          <<: *dev_cloud_os_eu
+          requires:
+            - cdk/test
+      - cdk/deploy:
+          name: synth-dev_cloud_os_eu
+          <<: *diff-defaults
+          <<: *dev_cloud_os_eu
+          command: synth
+          requires:
+            - diff-dev_cloud_os_eu
+      - cdk/guard:
+          name: guard-dev_cloud_os_eu
+          <<: *guard-defaults
+          requires:
+            - synth-dev_cloud_os_eu
+      ## dev-spi-uk
+      - cdk/deploy:
+          name: diff-dev_cloud_os_uk
+          <<: *diff-defaults
+          <<: *dev_cloud_os_uk
+          requires:
+            - cdk/test
+      - cdk/deploy:
+          name: synth-dev_cloud_os_uk
+          <<: *diff-defaults
+          <<: *dev_cloud_os_uk
+          command: synth
+          requires:
+            - diff-dev_cloud_os_uk
+      - cdk/guard:
+          name: guard-dev_cloud_os_uk
+          <<: *guard-defaults
+          requires:
+            - synth-dev_cloud_os_uk
+      ## dev-group-platform-eu
+      - cdk/deploy:
+          name: diff-dev_group_platform_eu
+          <<: *diff-defaults
+          <<: *dev_group_platform_eu
+          requires:
+            - cdk/test
+      - cdk/deploy:
+          name: synth-dev_group_platform_eu
+          <<: *diff-defaults
+          <<: *dev_group_platform_eu
+          command: synth
+          requires:
+            - diff-dev_group_platform_eu
+      - cdk/guard:
+          name: guard-dev_group_platform_eu
+          <<: *guard-defaults
+          requires:
+            - synth-dev_group_platform_eu
+      ## staging-spi-eu
+      - cdk/deploy:
+          name: diff-staging_cloud_os_eu
+          <<: *diff-defaults
+          <<: *staging_cloud_os_eu
+          requires:
+            - cdk/test
+      - cdk/deploy:
+          name: synth-staging_cloud_os_eu
+          <<: *diff-defaults
+          <<: *staging_cloud_os_eu
+          command: synth
+          requires:
+            - diff-staging_cloud_os_eu
+      - cdk/guard:
+          name: guard-staging_cloud_os_eu
+          <<: *guard-defaults
+          requires:
+            - synth-staging_cloud_os_eu
+      
+      - cdk/publish:
+          context: npm-github
+          requires:
+            - guard-dev_cloud_os_eu
+            - guard-dev_cloud_os_uk
+            - guard-dev_group_platform_eu
+            - guard-staging_cloud_os_eu
+            
+          <<: *only-main
+      - approve:
+          name: approve-dev_cloud_os_eu
+          type: approval
+          requires:
+            - cdk/publish
+          <<: *only-main
+      - cdk/deploy:
+          name: deploy-value-analysis-stack-dev-eu
+          <<: *dev_cloud_os_eu
+          <<: *deploy-job-defaults
+          requires:
+            - approve-dev_cloud_os_eu
+          <<: *only-main
+      - approve:
+          name: approve-dev_cloud_os_uk
+          type: approval
+          requires:
+            - cdk/publish
+          <<: *only-main
+      - cdk/deploy:
+          name: deploy-value-analysis-stack-dev-uk
+          <<: *dev_cloud_os_uk
+          <<: *deploy-job-defaults
+          requires:
+            - approve-dev_cloud_os_uk
+          <<: *only-main
+      - approve:
+          name: approve-dev_group_platform_eu
+          type: approval
+          requires:
+            - cdk/publish
+          <<: *only-main
+      - cdk/deploy:
+          name: deploy-value-analysis-stack-dev_group_platform_eu
+          <<: *dev_group_platform_eu
+          <<: *deploy-job-defaults
+          requires:
+            - approve-dev_group_platform_eu
+          <<: *only-main
+      - approve:
+          name: approve-staging_cloud_os_eu
+          type: approval
+          requires:
+            - cdk/publish
+          <<: *only-main
+      - cdk/deploy:
+          name: deploy-value-analysis-stack-staging-eu
+          <<: *staging_cloud_os_eu
+          <<: *deploy-job-defaults
+          requires:
+            - approve-staging_cloud_os_eu
+          <<: *only-main
+                

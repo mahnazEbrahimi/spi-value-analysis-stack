@@ -1,0 +1,71 @@
+type: iam
+defaults:
+    roles:
+        spiValueAnalysisAdminAccessRole:
+            roleName: spiValueAnalysisAdminAccessRole-${environment}
+            trustAccounts:
+            - arn:aws:iam::${account}:oidc-provider/oidc.eks.${region}.amazonaws.com/id/${eksIdentityProviderId}
+            trustConditions:
+                ForAllValues:StringEquals:
+                    oidc.eks.${region}.amazonaws.com/id/${eksIdentityProviderId}:sub:
+                    - system:serviceaccount:${serviceAccountNamespace}:${spiValueAnalysisAdminRoleServiceAccountName}
+            customerManagedPolicies:
+            - spiValueAnalysisAdminAccessPolicy-${environment}
+            awsManagedPolicies: []
+        spiValueAnalysisReadAccessRole:
+            roleName: spiValueAnalysisReadAccessRole-${environment}
+            trustAccounts:
+                - arn:aws:iam::${account}:oidc-provider/oidc.eks.${region}.amazonaws.com/id/${eksIdentityProviderId}
+            trustConditions:
+                ForAllValues:StringEquals:
+                    oidc.eks.${region}.amazonaws.com/id/${eksIdentityProviderId}:sub:
+                    - system:serviceaccount:${serviceAccountNamespace}:${spiValueAnalysisReadRoleServiceAccountName}
+            customerManagedPolicies:
+                - spiValueAnalysisReadAccessPolicy-${environment}
+            awsManagedPolicies: []
+        spiValueAnalysisAppAccessRole:
+            roleName: spiValueAnalysisAppAccessRole-${environment}
+            trustAccounts:
+            - arn:aws:iam::${account}:oidc-provider/oidc.eks.${region}.amazonaws.com/id/${eksIdentityProviderId}
+            trustConditions:
+                ForAllValues:StringEquals:
+                    oidc.eks.${region}.amazonaws.com/id/${eksIdentityProviderId}:sub:
+                    - system:serviceaccount:${serviceAccountNamespace}:${spiValueAnalysisAppRoleServiceAccountName}
+            customerManagedPolicies:
+            - spiValueAnalysisAppAccessPolicy-${environment}
+            awsManagedPolicies: []
+    policies:
+        spiValueAnalysisAdminAccessPolicy-${environment}:
+        -   Effect: Allow
+            Sid: dataEksspiValueAnalysisAdminAccessRoleRdsIam
+            Resource:
+            - arn:aws:rds-db:${region}:${account}:dbuser:${rdsDbResourceId}/signavio_admin
+            Action:
+            - rds-db:connect
+        spiValueAnalysisReadAccessPolicy-${environment}:
+        -   Effect: Allow
+            Sid: dataEksspiValueAnalysisReadAccessRoleRdsIam
+            Resource:
+            - arn:aws:rds-db:${region}:${account}:dbuser:${rdsDbResourceId}/signavio_read
+            Action:
+            - rds-db:connect
+        spiValueAnalysisAppAccessPolicy-${environment}:
+        -   Effect: Allow
+            Sid: dataEksspiValueAnalysisAppAccessRoleRdsIam
+            Resource:
+            - arn:aws:rds-db:${region}:${account}:dbuser:${rdsDbResourceId}/signavio_app
+            Action:
+            - rds-db:connect
+        -   Effect: Allow
+            Sid: dataEksspiValueAnalysisAppAccessRoleStsAssumeRole
+            Resource:
+            - arn:aws:iam::${account}:role/spiValueAnalysisAppAccessRole-${environment}
+            Action:
+            - sts:AssumeRole
+    ssmParameterPrefix: /Suite/IAM/SPI/valueAnalysis
+resources:
+    value-analysis:
+        filteredRoleNames:
+        - spiValueAnalysisAdminAccessRole
+        - spiValueAnalysisReadAccessRole
+        - spiValueAnalysisAppAccessRole
